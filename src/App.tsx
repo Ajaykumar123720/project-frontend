@@ -18,6 +18,7 @@ import AnalystDashboard from "@/pages/AnalystDashboard";
 import AboutPage from "@/pages/AboutPage";
 import ContactPage from "@/pages/ContactPage";
 import NotFound from "@/pages/NotFound";
+import ApiDemo from "@/components/ApiDemo";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/dashboard/analyst" element={<AnalystDashboard />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/api-demo" element={<ApiDemo />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

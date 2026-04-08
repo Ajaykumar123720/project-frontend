@@ -22,11 +22,23 @@ const dashboardItems = [
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
+
+  useState(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+  });
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    window.location.href = '/login'; // Use direct redirect to clear state
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,9 +95,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => navigate('/login')}>
-              <LogIn className="mr-1.5 h-4 w-4" /> Login
-            </Button>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium hidden lg:block">Hello, {user.fullName}</span>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => navigate('/login')}>
+                <LogIn className="mr-1.5 h-4 w-4" /> Login
+              </Button>
+            )}
             <button className="md:hidden rounded-lg p-2 hover:bg-muted" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>

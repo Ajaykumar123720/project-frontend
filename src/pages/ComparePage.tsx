@@ -1,19 +1,34 @@
-import { useState, useMemo } from 'react';
-import { Plus, X, TrendingUp, TrendingDown, Star } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Plus, X, TrendingUp, TrendingDown, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mutualFunds } from '@/data/mockData';
+import { MutualFund } from '@/data/mockData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import { useSearchParams } from 'react-router-dom';
 
 export default function ComparePage() {
+  const [funds, setFunds] = useState<MutualFund[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const initial = searchParams.get('funds')?.split(',').filter(Boolean) || [];
   const [selectedIds, setSelectedIds] = useState<string[]>(initial);
   const [showPicker, setShowPicker] = useState(false);
 
-  const selected = useMemo(() => mutualFunds.filter(f => selectedIds.includes(f.id)), [selectedIds]);
+  useEffect(() => {
+    fetch('/api/funds')
+      .then(res => res.json())
+      .then(data => {
+        setFunds(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching funds for comparison:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const selected = useMemo(() => funds.filter(f => selectedIds.includes(f.id)), [funds, selectedIds]);
 
   const chartData = selected.map(f => ({
     name: f.name.length > 20 ? f.name.slice(0, 20) + '…' : f.name,
@@ -56,7 +71,7 @@ export default function ComparePage() {
       {showPicker && (
         <Card className="mb-6">
           <CardContent className="p-4 max-h-60 overflow-auto">
-            {mutualFunds.filter(f => !selectedIds.includes(f.id)).map(f => (
+            {funds.filter(f => !selectedIds.includes(f.id)).map(f => (
               <button
                 key={f.id}
                 onClick={() => { setSelectedIds(ids => [...ids, f.id]); setShowPicker(false); }}
@@ -70,7 +85,13 @@ export default function ComparePage() {
         </Card>
       )}
 
-      {selected.length >= 2 && (
+      {loading && (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
+
+      {!loading && selected.length >= 2 && (
         <>
           {/* Chart */}
           <Card className="mb-8">

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Search, TrendingUp, Shield, BarChart3, BookOpen, ArrowRight, Star } from 'lucide-react';
+import { Search, TrendingUp, Shield, BarChart3, BookOpen, ArrowRight, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { mutualFunds, articles } from '@/data/mockData';
+import { MutualFund, articles } from '@/data/mockData';
 import FundCard from '@/components/FundCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const features = [
   { icon: TrendingUp, title: 'Smart Fund Selection', desc: 'Compare and select mutual funds based on performance, risk, and goals.' },
@@ -15,10 +15,26 @@ const features = [
 ];
 
 export default function HomePage() {
+  const [funds, setFunds] = useState<MutualFund[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const topFunds = mutualFunds.filter(f => f.rating === 5).slice(0, 3);
+
+  useEffect(() => {
+    fetch('/api/funds')
+      .then(res => res.json())
+      .then(data => {
+        setFunds(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching funds for home page:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const topFunds = funds.filter(f => f.rating === 5).slice(0, 3);
   const filteredFunds = search
-    ? mutualFunds.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || f.category.toLowerCase().includes(search.toLowerCase()))
+    ? funds.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || f.category.toLowerCase().includes(search.toLowerCase()))
     : [];
 
   return (

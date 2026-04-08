@@ -1,20 +1,46 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, TrendingUp, TrendingDown, Heart, Plus } from 'lucide-react';
+import { ArrowLeft, Star, TrendingUp, TrendingDown, Heart, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mutualFunds } from '@/data/mockData';
+import { MutualFund } from '@/data/mockData';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function FundDetailPage() {
   const { id } = useParams();
-  const fund = mutualFunds.find(f => f.id === id);
+  const [fund, setFund] = useState<MutualFund | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [watchlisted, setWatchlisted] = useState(false);
 
-  if (!fund) return (
+  useEffect(() => {
+    fetch(`/api/funds/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Fund not found');
+        return res.json();
+      })
+      .then(data => {
+        setFund(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching fund details:', err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return (
+    <div className="container mx-auto px-4 py-20 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+      <p className="text-muted-foreground">Loading fund details...</p>
+    </div>
+  );
+
+  if (!fund || error) return (
     <div className="container mx-auto px-4 py-16 text-center">
-      <p className="text-lg text-muted-foreground">Fund not found.</p>
+      <p className="text-lg text-muted-foreground">{error || 'Fund not found.'}</p>
       <Button asChild className="mt-4"><Link to="/funds">Back to Funds</Link></Button>
     </div>
   );

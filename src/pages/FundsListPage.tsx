@@ -1,29 +1,44 @@
-import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mutualFunds } from '@/data/mockData';
+import { MutualFund } from '@/data/mockData';
 import FundCard from '@/components/FundCard';
 
 const categories = ['All', 'Equity', 'Debt', 'Hybrid', 'Index', 'ELSS', 'Liquid'];
 const riskLevels = ['All', 'Low', 'Moderate', 'High', 'Very High'];
 
 export default function FundsListPage() {
+  const [funds, setFunds] = useState<MutualFund[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [risk, setRisk] = useState('All');
   const [sortBy, setSortBy] = useState<'returns1Y' | 'returns3Y' | 'returns5Y' | 'rating' | 'expenseRatio'>('returns1Y');
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/funds')
+      .then(res => res.json())
+      .then(data => {
+        setFunds(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching funds:', err);
+        setLoading(false);
+      });
+  }, []);
+
   const filtered = useMemo(() => {
-    let funds = [...mutualFunds];
-    if (search) funds = funds.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || f.fundHouse.toLowerCase().includes(search.toLowerCase()));
-    if (category !== 'All') funds = funds.filter(f => f.category === category);
-    if (risk !== 'All') funds = funds.filter(f => f.riskLevel === risk);
-    funds.sort((a, b) => sortBy === 'expenseRatio' ? a[sortBy] - b[sortBy] : b[sortBy] - a[sortBy]);
-    return funds;
-  }, [search, category, risk, sortBy]);
+    let filteredFunds = [...funds];
+    if (search) filteredFunds = filteredFunds.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || f.fundHouse.toLowerCase().includes(search.toLowerCase()));
+    if (category !== 'All') filteredFunds = filteredFunds.filter(f => f.category === category);
+    if (risk !== 'All') filteredFunds = filteredFunds.filter(f => f.riskLevel === risk);
+    filteredFunds.sort((a, b) => sortBy === 'expenseRatio' ? a[sortBy] - b[sortBy] : b[sortBy] - a[sortBy]);
+    return filteredFunds;
+  }, [funds, search, category, risk, sortBy]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -85,10 +100,17 @@ export default function FundsListPage() {
 
       <p className="text-sm text-muted-foreground mb-4">{filtered.length} funds found</p>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map(f => <FundCard key={f.id} fund={f} />)}
-      </div>
-      {filtered.length === 0 && (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Loading funds from database...</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(f => <FundCard key={f.id} fund={f} />)}
+        </div>
+      )}
+      {!loading && filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-lg">No funds found matching your criteria.</p>
         </div>
